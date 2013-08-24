@@ -1,0 +1,22 @@
+{
+  "name": "react-page",
+  "version": "0.2.0",
+  "description": "Starter Application for React, CommonJS, JSX, Server Rendering.",
+  "main": "index.js",
+  "dependencies": {
+    "React": "git://github.com/facebook/react.git",
+    "react-page-middleware": "git://github.com/facebook/react-page-middleware.git",
+    "connect": "2.8.3",
+    "levelup": "~0.14.0",
+    "level-js": "~1.0.8"
+  },
+  "author": {
+    "name": "Jordan Walke",
+    "email": "jordwalke@facebook.com",
+    "url": "http://github.com/jordwalke"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "license": "Apache-2.0"
+}

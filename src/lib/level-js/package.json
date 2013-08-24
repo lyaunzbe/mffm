@@ -1,0 +1,39 @@
+{
+  "name": "level-js",
+  "version": "1.0.8",
+  "description": "leveldown/leveldb library for browsers using IndexedDB",
+  "main": "index.js",
+  "scripts": {
+    "test": "beefy test.js test-levelup.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:maxogden/level.js.git"
+  },
+  "keywords": [
+    "level",
+    "leveldb"
+  ],
+  "author": {
+    "name": "max ogden"
+  },
+  "license": "BSD",
+  "devDependencies": {
+    "tape": "~0.3.3",
+    "browserify": "~2.13.2",
+    "beefy": "~0.3.0",
+    "levelup": "~0.13.0"
+  },
+  "dependencies": {
+    "idb-wrapper": "~1.2.0",
+    "isbuffer": "~0.0.0",
+    "abstract-leveldown": "0.7.2"
+  },
+  "readme": "![logo](logo.png)\n\nlevel.js an implementation of the [leveldown](https://github.com/rvagg/node-leveldown) API on top of [IndexedDB](https://developer.mozilla.org/en-US/docs/IndexedDB) (which is in turn implemented on top of [LevelDB](https://code.google.com/p/leveldb/), which brings this whole shebang full circle)\n\nlevel.js uses [IDBWrapper](https://github.com/jensarps/IDBWrapper) by jensarps to ensure compatibility between IDB implementations.\n\nHere are the goals of this level.js:\n\n- Store large amounts of ascii (strings, JSON) and binary (ArrayBuffers, Typed Arrays) data in modern browsers\n- Be as fast as possible\n- Use the leveldown test suite and sync with [multilevel](https://github.com/juliangruber/multilevel) over either ascii or binary transports (websockets and xhr both have ascii/binary modes in browsers now)\n\nBeing leveldown compatible means you can use many of the [level-* modules](https://github.com/rvagg/node-levelup/wiki/Modules) on top of this library.\n\nFor example, there is experimental support in using the popular [levelup](http://github.com/rvagg/node-levelup) library on top of level.js. See `test-levelup.js` for details\n\n## install\n\n```js\nnpm install level-js\n```\n\n(Not to be confused with [leveljs](https://github.com/rvagg/node-leveljs))\n\nThis library is best used with [browserify](http://browserify.org)\n\n## code examples\n\n```\nvar leveljs = require('level-js')\nvar db = leveljs('bigdata')\ndb.open(function onOpen() { })\n```\n\nThe test suite for this library is in the [abstract-leveldown](https://github.com/rvagg/node-abstract-leveldown) repo and is shared between various leveldown implementations across different environments and platforms.\n\nFor more code examples see the [abstract-leveldown test suite](https://github.com/rvagg/node-abstract-leveldown/tree/master/abstract)\n\nThe only differences between this and leveldown is that you can store `ArrayBuffers` in this (whereas leveldown just uses node `Buffer` objects)\n\n## run the tests\n\n```sh\ngit clone git@github.com:maxogden/level.js.git\ncd level.js\nnpm install\nnpm test\nopen localhost:9966\n```\n\nThen look in your browser console\n\n## license\n\nBSD\n",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/maxogden/level.js/issues"
+  },
+  "_id": "level-js@1.0.8",
+  "_from": "level-js@"
+}
