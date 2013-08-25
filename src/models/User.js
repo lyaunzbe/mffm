@@ -1,4 +1,6 @@
-var UserCtrl = require('../controllers/UserCtrl.js');
+var UserCtrl = require('../controllers/UserCtrl.js'),
+		Stream   = require('../models/Stream.js'),
+		_   		 = require('lodash');
 
 var User = (function(){
 	var self = this;
@@ -23,9 +25,21 @@ var User = (function(){
 	
 });
 
-User.prototype.addStream = function(stream){
+User.prototype.addStream = function(stream, cb){
+	// Check if this stream already exists
 	this.data.streams.push(stream);
-	return this;
+	UserCtrl.put(this.data, function(err){
+		if(err) return cb(err);
+		Stream.add(stream, function(err){
+			if(err) return cb(err);
+			cb(null);
+		});
+	});
+
+}
+
+User.prototype.toJSON = function(){
+	return this.data;
 }
 
 module.exports = User;

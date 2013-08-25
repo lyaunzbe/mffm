@@ -18,22 +18,36 @@
 var React = require('react-core').React,
     Sidebar = require('./Sidebar.jsx'),
     User  = require('../../models/User.js'),
+    Stream  = require('../../models/stream.js'),
     Main  = require('./Main.jsx'),
     leveljs = require('level-js'),
     levelup = require('levelup'),
     factory = function(location){ return new leveljs(location) };
 
     window.db = levelup('mffm', {db: factory, valueEncoding: 'json'});
+    window.user = new User();
 
 var Application = React.createClass({
   getInitialState: function(){
-    return { user : new User() };
+    var usr = user.toJSON();
+
+
+    return { user: usr, streams: null };
   },
 
   addStream: function(stream){
-    updatedUser = this.state.user.addStream(stream);
-    this.setState({ user : updatedUser });
-    console.log(this.state);
+    var self = this;
+    user.addStream(stream, function(err){
+      if(err){
+        console.log(err);
+        return;
+      }
+      console.log('Success');
+      self.setState({user: user.toJSON()});
+
+    });
+    // var updatedUser = user.toJSON(),
+    //     streams = stream.fetch(updatedUser.streams);
   },
 
   render: function() {

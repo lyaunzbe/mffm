@@ -3,18 +3,19 @@
  */
 var React = require('react-core').React;
 
-var Sidebar = React.createClass({
+var StreamList = React.createClass({
 
 	render: function(){
-		console.log(this.props.user);
+		var streams = this.props.streams.map(function(stream){
+			return <li>{stream}</li>;
+		});
+		
 		return (
-			<div class="sidebar">
-				<img class="logo" src="../public/img/logo.png">
-				<StreamList />
-				<AddStream />
-			</div>
+			<ul>
+				{streams}
+			</ul>
 		);
 	}	
 });
 
-module.exports = Sidebar;
+module.exports = StreamList;
