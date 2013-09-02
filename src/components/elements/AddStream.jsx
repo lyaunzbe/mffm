@@ -6,7 +6,7 @@ var React = require('react-core').React;
 var AddStream = React.createClass({
 
 	add: function(stream){
-		this.props.onAddStream(stream);
+		this.props.onAddStream(stream.toLowerCase());
 	},
 
 	onKey: function(e){

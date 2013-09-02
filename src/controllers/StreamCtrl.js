@@ -1,14 +1,15 @@
 
 var StreamCtrl = (function(){
   return {
-    get : function(cb){
-      db.get('user', function(err, value){
+    get : function(stream,cb){
+      db.get(stream, function(err, value){
         if(err) return cb(err, null);
-        cb(null, JSON.parse(value));
+        data = JSON.parse(value);
+        cb(null, data);
       });
     },
 
-    put : function(stream,data, cb){
+    put : function(stream, data, cb){
       var data = JSON.stringify(data);
       
       db.put(stream, data, cb);

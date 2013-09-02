@@ -22,10 +22,72 @@
 	top: 0;
 	bottom: 0;
 	overflow: hidden;
-	width: 415px;
+	width: 350px;
 	box-sizing: border-box;
 	border-right: 1px solid rgb(218, 223, 229);
-	footer{
+
+  .streamlist{
+    text-align: center;
+    list-style: none;
+    padding: 0;
+    font-family: proxima-nova;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 14px;
+    margin: 0;
+    position: absolute;
+    top: 92px;
+    left: 0;
+    right: 0;
+    bottom: 58px;
+    overflow-y: auto;
+
+    li{
+      padding-bottom:1em;
+      border-bottom: 1px solid rgb(218, 223, 229);
+      padding-top:1em;
+      color:rgb(128, 132, 136);
+    }
+    li:hover, li.active{
+      color:white;
+      background-color:rgba(82, 168, 236, 0.6);
+      cursor:pointer;
+    }
+
+    li.active{
+      background-color:rgba(82, 168, 236, .8);
+    }
+  }
+  
+  .logo{
+    opacity:.8;
+    line-height: 30px;
+    font-size: 35px;
+    font-family: proxima-nova;
+    color: rgb(163, 172, 182);
+    font-style: italic;
+    font-weight: 100;
+    letter-spacing: 2px;
+    padding-top: 31px;
+    padding-left: 22px;
+    border-bottom: 1px solid rgb(218, 223, 229);
+    padding-bottom: 30px;
+    .ico {
+      transition: -webkit-transform .7s;
+      width: 33px;
+      border: solid 3px #A3ACB6;
+      border-radius: 50px;
+      padding: 4px;
+      float: right;
+      margin-top: -9px;
+      margin-right:25px;
+    }
+    .ico:hover {
+      -webkit-transform: rotate(360deg);    
+    }
+  }
+	
+  footer{
 		position: absolute;
 		left: 0;
 		right: 0;
@@ -41,21 +103,72 @@
 				padding-right:20px;
 				float:left;
 				border:none;
-				height:48px;
-				border-right: 1px solid rgb(218, 223, 229);
-				width:350px;
+				height:57px;
 			}
 
 			input:focus{
 				outline:none;
 			}
 			a.add{
-				padding:15px 25px;
+				padding:20px 25px;
 				float:right;
 				display:inline-block;
 				color: #4b525b;
 				text-decoration:none;
+        border-left: 1px solid rgb(218, 223, 229);
 			}
 		}
 	}
+}
+
+.main{
+  position: absolute;
+  left: 350px;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+
+  .player{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-top: 1px solid #DADFE5;
+    height:57px;
+
+    .controls{
+      margin: 0 auto;
+      width: 140px;
+      margin-top: 10px;
+
+      i{
+        display: block;
+        opacity: .65;
+        float: left;
+      }
+      i:hover{
+        opacity:.9;
+      }
+      i.back{
+        margin-top: 10px;
+        margin-right: 40px;
+      }
+      i.play{
+        font-size:36px;
+      }
+      i.pause{
+        font-size:33px;
+      }
+      i.forward{
+        margin-top: 10px;
+        margin-left: 40px;
+      }
+
+    }
+
+    #stereo{
+    }
+  }
 }

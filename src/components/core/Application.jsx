@@ -24,15 +24,39 @@ var React = require('react-core').React,
     levelup = require('levelup'),
     factory = function(location){ return new leveljs(location) };
 
-    window.db = levelup('mffm', {db: factory, valueEncoding: 'json'});
-    window.user = new User();
+window.db = levelup('mffm', {db: factory, valueEncoding: 'json'});
+window.user;
 
 var Application = React.createClass({
   getInitialState: function(){
-    var usr = user.toJSON();
+    return { 
+      user:{
+        streams: []
+      }, 
+      streams: null,
+      active: null
+    };
+  },
+  componentDidMount: function(){
+    var self = this;
+    window.user = new User(function(err){
+        if(err) console.log(err);
+        var usr = user.toJSON();
+        user.fetchStreams(function(err, streams){
+          if(err){
+            console.log(err);
+          }else{
+            var activeStream = (user.data.streams.length > 0) ? user.data.streams[0] : null,
+                playlist = !$.isEmptyObject(streams) ? streams[user.data.streams[0]].playlist : [],
+                active = null;
 
-
-    return { user: usr, streams: null };
+            if(activeStream){
+              active = { stream: activeStream, playlist: playlist  };
+            }
+            self.setState({ user: usr, streams: streams, active: active });
+          }
+        });
+    });
   },
 
   addStream: function(stream){
@@ -46,16 +70,15 @@ var Application = React.createClass({
       self.setState({user: user.toJSON()});
 
     });
-    // var updatedUser = user.toJSON(),
-    //     streams = stream.fetch(updatedUser.streams);
+
   },
 
   render: function() {
-
+    console.log(this.state);
     return (
       <div id="mainContainer">
-        <Sidebar onAddStream={this.addStream} user={this.state.user} />
-        <Main />
+        <Sidebar onAddStream={this.addStream} user={this.state.user} active={this.state.active}/>
+        <Main streams={this.state.streams} active={this.state.active}/>
       </div>
     );
   }

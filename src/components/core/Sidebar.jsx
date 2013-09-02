@@ -14,7 +14,10 @@ var Sidebar = React.createClass({
 	render: function(){
 		return (
 			<div class="sidebar">
-				<StreamList streams={this.props.user.streams} />
+				<div class="logo">MFFM
+				<object class="ico" type="image/svg+xml" data="./img/note.svg" width="33" height="33"/>
+				</div>
+				<StreamList streams={this.props.user.streams} active={this.props.active} />
 				<footer>
 					<AddStream onAddStream={this.handleAddStream} />
 				</footer>
