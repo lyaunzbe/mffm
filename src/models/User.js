@@ -1,6 +1,6 @@
 var UserCtrl = require('../controllers/UserCtrl.js'),
 		Stream   = require('../models/Stream.js');
-		
+
 var User = (function(cb){
 	var self = this;
 
@@ -37,16 +37,24 @@ User.prototype.addStream = function(stream, cb){
 			});
 	});
 
-}
+};
 
 User.prototype.toJSON = function(){
 	return this.data;
-}
+};
 
 User.prototype.fetchStreams = function(cb){
 	Stream.fetch(this.data.streams, function(err, results){
 		if(err) return cb(err);
 		cb(null, results);
+	});
+
+};
+
+User.prototype.fetchStream = function(stream, cb){
+	Stream.fetch(stream, function(err, result){
+		if(err) return cb(err);
+		cb(null, result);
 	});
 
 }

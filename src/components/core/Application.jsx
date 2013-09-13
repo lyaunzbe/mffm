@@ -66,9 +66,16 @@ var Application = React.createClass({
         console.log(err);
         return;
       }
-      console.log('Success');
-      self.setState({user: user.toJSON()});
-
+      user.fetchStreams(function(err, streams){
+        console.log('Success');
+        console.log(streams);
+        var active = (self.state.active) ? self.state.active : {
+          stream: user.data.streams[0],
+          playlist: streams[user.data.streams[0]].playlist
+        };
+        self.setState({user: user.toJSON(), streams: streams, active: active});
+        console.log(self.state);
+      });
     });
 
   },

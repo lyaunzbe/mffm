@@ -51,7 +51,7 @@ var Stream = (function(){
     },
 
     transformStreamData: function(streamData){
-      console.log(streamData);
+
       var filtered = _.filter(streamData, function(item){
         return (item.data.media);
       });
@@ -70,8 +70,9 @@ var Stream = (function(){
     createPlayList: function(data){
       var playlist = _.map(data, function(item){
         console.log(item);
-        var id = item.url.split('?v=')[1];
-        return id;
+        var id = item.url.split('?v=')[1],
+            title = item.title;
+        return {id: id, title: title};
       })
       return playlist;
     }

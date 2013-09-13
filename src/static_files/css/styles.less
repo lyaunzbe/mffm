@@ -163,12 +163,45 @@
       }
       i.forward{
         margin-top: 10px;
-        margin-left: 40px;
+        margin-left: 30px;
       }
 
     }
 
     #stereo{
+      display:none;
     }
+  }
+
+  .playlist{
+    list-style: none;
+    padding: 0;
+    font-family: proxima-nova;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 14px;
+    margin: 0;
+    position: absolute;
+    top: 0px;
+    left: 0;
+    right: 0;
+    bottom: 58px;
+    overflow-y: auto;
+    li{
+      padding-top: 37px;
+      padding-bottom: 37px;
+      border-bottom: 1px solid #DADFE5;
+      padding-left:40px;
+      color:#6C737A;
+    }
+    li:last-child{
+      border-bottom:none;
+    }
+
+    li:hover{
+      background-color:rgba(82, 168, 236, 0.6);
+      color:white;
+    }
+
   }
 }

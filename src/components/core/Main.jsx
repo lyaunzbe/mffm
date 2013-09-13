@@ -11,7 +11,7 @@ var Main = React.createClass({
 		// console.log(this.state.user);
 		return (
 			<div class="main">
-        <Playlist />
+        <Playlist active={this.props.active}/>
         <Player active={this.props.active}/>
 			</div>
 		);

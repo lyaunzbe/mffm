@@ -12,13 +12,14 @@ var Player = React.createClass({
             ytIndex: 0, 
             ytStatus: false };
   },
+
   componentDidUpdate: function(prev){
-    console.log(this.props);
     // YT LOGIC
     // Load the yt player if it isn't already loaded
     if(this.props.active && !this.state.ytPlayerReady){
       this.loadYTPlayer();
     }else{
+      console.log(this.props.active);
       // Check the case where we are are a new user
       if(this.props.active){
         if(!this.state.ytPlaylist){
@@ -36,17 +37,15 @@ var Player = React.createClass({
     }
 
   },
+
   onYTPlayerReady: function(e){
-    console.log('yo');
     this.setState({ytPlayerReady:true});
   },
   
   onYTPlayerStateChange: function(e){
-    console.log('bo');
   },
 
   loadYTPlaylist: function(){
-    console.log('loading playlist');
     //reset the ytIndex
     this.setState({ytIndex:0});
     var player = this.state.ytPlayer;
@@ -54,14 +53,13 @@ var Player = React.createClass({
     //   console.log(item);
     //   player.cueVideoById(item);
     // });
-    player.cueVideoById(this.state.ytPlaylist[this.state.ytIndex]);
+    player.cueVideoById(this.state.ytPlaylist[this.state.ytIndex].id);
 
   },
 
   loadYTPlayer: function(){
     var self = this;
     $(document).ready(function(){
-      console.log(self.onYTPlayerReady);
       self.state.ytPlayer = new YT.Player('stereo', {
         events: {
           'onReady': self.onYTPlayerReady,
@@ -70,6 +68,7 @@ var Player = React.createClass({
       });
     });
   },
+
   onPlay: function(){
     console.log('play');
     this.state.ytPlayer.playVideo();
@@ -78,6 +77,7 @@ var Player = React.createClass({
     $(pp).removeClass();
     $(pp).addClass('pause icon-pause');
   },
+
   onPause: function(){
     console.log('pause');
     this.state.ytPlayer.pauseVideo();
@@ -87,12 +87,29 @@ var Player = React.createClass({
     $(pp).addClass('play icon-play');
     console.log($(pp));
   },
+
   onForward: function(){
+    var length = this.state.ytPlaylist.length;
     var nextIndex = this.state.ytIndex+1;
+    if(nextIndex < length){
+      console.log(nextIndex);
+      this.setState({ytIndex: nextIndex});
+      console.log(this.state.ytIndex);
+      this.state.ytPlayer.loadVideoById(this.state.ytPlaylist[nextIndex].id);
+    }
+  },
+
+  onBackward: function(){
+    var nextIndex = this.state.ytIndex-1;
     console.log(nextIndex);
-    this.setState({ytIndex: nextIndex});
-    console.log(this.state.ytIndex);
-    this.state.ytPlayer.loadVideoById(this.state.ytPlaylist[nextIndex]);
+
+    if(nextIndex >= 0){
+      console.log(nextIndex);
+      this.setState({ytIndex: nextIndex});
+      console.log(this.state.ytIndex);
+      this.state.ytPlayer.loadVideoById(this.state.ytPlaylist[nextIndex].id);
+    }
+      
   },
   render: function(){
     var pp = this.state.ytStatus ? 'onPause' : 'onPlay';
@@ -100,7 +117,7 @@ var Player = React.createClass({
     return (
       <div class="player">
         <div class="controls">
-          <i class="back icon-fast-backward" />
+          <i onClick={this.onBackward} class="back icon-fast-backward" />
           <i ref="pp" onClick={this[pp]} class="play icon-play" />
           <i onClick={this.onForward}class="forward icon-fast-forward" />
         </div>
