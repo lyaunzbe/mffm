@@ -1,0 +1,17 @@
+{
+  "name": "mffm",
+  "version": "0.0.0",
+  "main": "js/app.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "exoskeleton": "git://github.com/paulmillr/exoskeleton.git#~0.5.1",
+    "jquery": "~2.0.3",
+    "underscore": "~1.5.2"
+  }
+}
