@@ -42,7 +42,8 @@ var Stream = (function(){
           console.log(playlist);
           var streamPack = {
             'raw' : raw,
-            'playlist' : playlist
+            'playlist' : playlist,
+            'ts' : Date.now()
           };
           cb(null, streamPack);
         });
