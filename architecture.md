@@ -1,18 +1,20 @@
-## Focus
-A small app to help you listen to reddit.
+## Models ##
 
-## Models
+* Stream
+  - 1:M 
+  - RelatedModel: StreamItem
+* StreamItem
 
-### User
-* unique id
-* array of streams 
+## Collections ##
 
-### Stream
-* unique id
-* name
-* url
-* working (Does this url actually have rss/json?)
+* Streams
+  - Model: Stream
 
-### Posts
-* url
-* source
+## Views ##
+
+### Hierachy ###
+  * AppView
+    * SidebarView 
+    * MainView
+      * PlaylistView
+      * Player

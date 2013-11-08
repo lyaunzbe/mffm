@@ -12,6 +12,7 @@
   "dependencies": {
     "exoskeleton": "git://github.com/paulmillr/exoskeleton.git#~0.5.1",
     "jquery": "~2.0.3",
-    "underscore": "~1.5.2"
+    "underscore": "~1.5.2",
+    "backbone-relational": "~0.8.6"
   }
 }

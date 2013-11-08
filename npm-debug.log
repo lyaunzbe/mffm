@@ -1,0 +1,54 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'node', '/usr/local/bin/npm', 'install', 'backone-relational' ]
+2 info using npm@1.3.2
+3 info using node@v0.10.13
+4 verbose readDependencies using package.json deps
+5 verbose cache add [ 'backone-relational', null ]
+6 verbose cache add name=undefined spec="backone-relational" args=["backone-relational",null]
+7 verbose parsed url { protocol: null,
+7 verbose parsed url   slashes: null,
+7 verbose parsed url   auth: null,
+7 verbose parsed url   host: null,
+7 verbose parsed url   port: null,
+7 verbose parsed url   hostname: null,
+7 verbose parsed url   hash: null,
+7 verbose parsed url   search: null,
+7 verbose parsed url   query: null,
+7 verbose parsed url   pathname: 'backone-relational',
+7 verbose parsed url   path: 'backone-relational',
+7 verbose parsed url   href: 'backone-relational' }
+8 silly lockFile e3922962-backone-relational backone-relational
+9 verbose lock backone-relational /Users/nuayl-admin/.npm/e3922962-backone-relational.lock
+10 silly lockFile e3922962-backone-relational backone-relational
+11 silly lockFile e3922962-backone-relational backone-relational
+12 verbose addNamed [ 'backone-relational', '' ]
+13 verbose addNamed [ null, '*' ]
+14 silly lockFile 1ef2ac12-backone-relational backone-relational@
+15 verbose lock backone-relational@ /Users/nuayl-admin/.npm/1ef2ac12-backone-relational.lock
+16 silly addNameRange { name: 'backone-relational', range: '*', hasData: false }
+17 verbose url raw backone-relational
+18 verbose url resolving [ 'https://registry.npmjs.org/', './backone-relational' ]
+19 verbose url resolved https://registry.npmjs.org/backone-relational
+20 info trying registry request attempt 1 at 16:34:25
+21 http GET https://registry.npmjs.org/backone-relational
+22 http 404 https://registry.npmjs.org/backone-relational
+23 silly registry.get cb [ 404,
+23 silly registry.get   { server: 'CouchDB/1.3.1 (Erlang OTP/R15B03)',
+23 silly registry.get     date: 'Thu, 07 Nov 2013 21:21:23 GMT',
+23 silly registry.get     'content-type': 'application/json',
+23 silly registry.get     'content-length': '52',
+23 silly registry.get     'cache-control': 'must-revalidate' } ]
+24 silly lockFile 1ef2ac12-backone-relational backone-relational@
+25 silly lockFile 1ef2ac12-backone-relational backone-relational@
+26 error 404 'backone-relational' is not in the npm registry.
+26 error 404 You should bug the author to publish it
+26 error 404
+26 error 404 Note that you can also install from a
+26 error 404 tarball, folder, or http url, or git url.
+27 error System Darwin 12.4.0
+28 error command "node" "/usr/local/bin/npm" "install" "backone-relational"
+29 error cwd /Users/nuayl-admin/Documents/mffm
+30 error node -v v0.10.13
+31 error npm -v 1.3.2
+32 error code E404
+33 verbose exit [ 1, true ]

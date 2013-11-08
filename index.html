@@ -4,9 +4,9 @@
     <title>MFFM</title>
     <meta name="viewport"               content="width=device-width, initial-scale=1.0">
     <meta name="description"            content="Listen to Reddit in Style">
+    <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
     <link rel="less/stylesheet" type="text/less" href="./css/styles.less" />
     <script src="./js/lib/less.js"></script>
-    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet"/>
     <script type="text/javascript">
       var tag = document.createElement('script');
       tag.src = "//www.youtube.com/iframe_api";
@@ -16,9 +16,38 @@
     <script type="text/javascript" src="./build/bundle.js" charset="utf-8"></script>
 
   </head>
-  <body>
-    <div id="mainContainer">
+  <body id="app">
+    <div class="sidebar">
+      <div class="logo">
+        MFFM
+        <object class="ico" type="image/svg+xml" data="./img/note.svg" width="33" height="33">
+      </object>
+      </div>
+      <footer>
+        <div class="add-stream">
+          <input type="text" placeholder="Add a Subreddit . . ." ></input>
+          <a class="add"><i class="fa fa-plus"></i></a>
+        </div>
+      </footer>
     </div>
+    <div class="main">
+      <ul class="playlist">
+      </ul>
+      <div class="player">
+        <div class="controls">
+          <i class="back fa fa-fast-backward" ></i>
+          <i class="play fa fa-play" ></i>
+          <i class="forward fa fa-fast-forward" ></i>
+        </div>
+        <div class="progress">
+          <div class="track-progress">
+            <div class="slider"></div>
+          </div>
+        </div>
+        <div id="stereo"></div>
+      </div>
+    </div>
+
   </body>
 
 </html>
