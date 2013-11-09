@@ -13053,18 +13053,21 @@ var AppView = Backbone.View.extend({
 
   render: function(){
 
-    console.log('rerendering');
-    this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist});
-
-    this.$el.append(this.MainView.render());
+    this.MainView.render();
   },
 
   initialize: function(){
     this.Streams = new Streams();
+    this.Playlist = new Playlist();
     this.Streams.fetch();
     this.SidebarView = new SidebarView({ collection: this.Streams});
+
     this.$el.append(this.SidebarView.render());
+
     this.playlistChange();
+    this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist});
+    this.$el.append(this.MainView.render());
+    
     this.listenTo(this.Streams, 'activeStreamChange', this.playlistChange);
     this.listenTo(this.Streams, 'activeStreamChange', this.render);
     this.render();
@@ -13077,7 +13080,7 @@ var AppView = Backbone.View.extend({
         playlist = activeStream ? 
                   { tracks: activeStream.toJSON().playlist } : {};
 
-    this.Playlist = new Playlist(playlist);
+    this.Playlist.set(playlist);
   }
 });
 
@@ -13106,6 +13109,7 @@ var PlayerView = Backbone.View.extend({
     Pace.stop();
   },
   initialize: function(opts){
+    console.log('Init PlayerView');
     var self = this;
     this.progressBar = true;
     this.Playlist = opts.playlist;
@@ -13113,6 +13117,7 @@ var PlayerView = Backbone.View.extend({
 
     this.listenTo(this.Streams, 'activeStreamChange', this.disableProgressBar);
     this.listenTo(this.Playlist, 'playlistSelection', this.playlistSelection);
+    this.listenTo(this.Playlist, 'change:tracks', _.once(this.playlistLoad));
 
     if(!Players.yt){
       Players.yt = new YT.Player('stereo', {
@@ -13130,7 +13135,6 @@ var PlayerView = Backbone.View.extend({
 
   onPlay: function(e){
     var yt    = Players.yt;
-
     yt.playVideo();
     this.Playlist.set('status', 1);
 
@@ -13224,10 +13228,10 @@ var PlayerView = Backbone.View.extend({
   },
 
   playlistSelection: function(){
+    console.log(this);
     var yt    = Players.yt,
         index = this.Playlist.get('index'),
         tracks = this.Playlist.get('tracks');
-
     yt.loadVideoById(tracks[index].id);
     this.Playlist.set('status', 1);
     this.$el.find('i.fa-play')
@@ -13255,6 +13259,12 @@ var PlayerView = Backbone.View.extend({
 
   disableProgressBar: function(){
     this.progressBar = false;
+  },
+
+  playlistLoad: function(){
+    var tracks = this.Playlist.get('tracks');
+    Players.yt.cueVideoById(tracks[0].id);
+    this.render();
   }
 });
 
@@ -13274,12 +13284,15 @@ var PlaylistView = Backbone.View.extend({
   },
 
   render: function(){
+
     var playlist = {items: this.Playlist.toJSON().tracks};
+    console.log('rendering playlist', playlist);
     this.$el.empty();
     this.$el.append(this.template(playlist));
 
   },
   initialize: function(opts){
+    console.log('init PlaylistView');
     this.Playlist = opts.playlist;
 
     this.listenTo(this.Playlist, 'change:status', this.statusChange);
@@ -13324,6 +13337,7 @@ var PlaylistView = Backbone.View.extend({
     var status = e.get('status'),
         index  = e.get('index');
 
+    console.log(status, index);
     this.$el.find('li').removeClass();
     this.$el.find('i').removeClass()
       .addClass('fa fa-play').css('visibility', 'hidden');
@@ -13357,21 +13371,24 @@ var PlaylistView = require('./PlaylistView'),
 var MainView = Backbone.View.extend({
   el: '.main',
   render: function(){
-    this.PlayerView = new PlayerView({
-      playlist: this.Playlist,
-      streams: this.Streams
-    });
-    
-    this.PlaylistView = new PlaylistView({
-      playlist: this.Playlist
-    });
+    console.log(this.Playlist);
+
     this.PlaylistView.render();
 
   },
   initialize: function(opts){
+    console.log('init MainView');
     this.Playlist = opts.playlist,
     this.Streams = opts.streams;
 
+    this.PlayerView = new PlayerView({
+      playlist: this.Playlist,
+      streams: this.Streams
+    });
+
+    this.PlaylistView = new PlaylistView({
+      playlist: this.Playlist
+    });
   }
 });
 

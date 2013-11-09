@@ -21,6 +21,7 @@ var PlayerView = Backbone.View.extend({
     Pace.stop();
   },
   initialize: function(opts){
+    console.log('Init PlayerView');
     var self = this;
     this.progressBar = true;
     this.Playlist = opts.playlist;
@@ -28,6 +29,7 @@ var PlayerView = Backbone.View.extend({
 
     this.listenTo(this.Streams, 'activeStreamChange', this.disableProgressBar);
     this.listenTo(this.Playlist, 'playlistSelection', this.playlistSelection);
+    this.listenTo(this.Playlist, 'change:tracks', _.once(this.playlistLoad));
 
     if(!Players.yt){
       Players.yt = new YT.Player('stereo', {
@@ -45,7 +47,6 @@ var PlayerView = Backbone.View.extend({
 
   onPlay: function(e){
     var yt    = Players.yt;
-
     yt.playVideo();
     this.Playlist.set('status', 1);
 
@@ -139,10 +140,10 @@ var PlayerView = Backbone.View.extend({
   },
 
   playlistSelection: function(){
+    console.log(this);
     var yt    = Players.yt,
         index = this.Playlist.get('index'),
         tracks = this.Playlist.get('tracks');
-
     yt.loadVideoById(tracks[index].id);
     this.Playlist.set('status', 1);
     this.$el.find('i.fa-play')
@@ -170,6 +171,12 @@ var PlayerView = Backbone.View.extend({
 
   disableProgressBar: function(){
     this.progressBar = false;
+  },
+
+  playlistLoad: function(){
+    var tracks = this.Playlist.get('tracks');
+    Players.yt.cueVideoById(tracks[0].id);
+    this.render();
   }
 });
 

@@ -12,12 +12,15 @@ var PlaylistView = Backbone.View.extend({
   },
 
   render: function(){
+
     var playlist = {items: this.Playlist.toJSON().tracks};
+    console.log('rendering playlist', playlist);
     this.$el.empty();
     this.$el.append(this.template(playlist));
 
   },
   initialize: function(opts){
+    console.log('init PlaylistView');
     this.Playlist = opts.playlist;
 
     this.listenTo(this.Playlist, 'change:status', this.statusChange);
@@ -62,6 +65,7 @@ var PlaylistView = Backbone.View.extend({
     var status = e.get('status'),
         index  = e.get('index');
 
+    console.log(status, index);
     this.$el.find('li').removeClass();
     this.$el.find('i').removeClass()
       .addClass('fa fa-play').css('visibility', 'hidden');

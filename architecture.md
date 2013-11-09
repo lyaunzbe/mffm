@@ -1,14 +1,11 @@
 ## Models ##
 
 * Stream
-  - 1:M 
-  - RelatedModel: StreamItem
-* StreamItem
+* Playlist
 
 ## Collections ##
 
 * Streams
-  - Model: Stream
 
 ## Views ##
 

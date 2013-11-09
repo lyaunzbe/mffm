@@ -9,18 +9,21 @@ var AppView = Backbone.View.extend({
 
   render: function(){
 
-    console.log('rerendering');
-    this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist});
-
-    this.$el.append(this.MainView.render());
+    this.MainView.render();
   },
 
   initialize: function(){
     this.Streams = new Streams();
+    this.Playlist = new Playlist();
     this.Streams.fetch();
     this.SidebarView = new SidebarView({ collection: this.Streams});
+
     this.$el.append(this.SidebarView.render());
+
     this.playlistChange();
+    this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist});
+    this.$el.append(this.MainView.render());
+    
     this.listenTo(this.Streams, 'activeStreamChange', this.playlistChange);
     this.listenTo(this.Streams, 'activeStreamChange', this.render);
     this.render();
@@ -33,7 +36,7 @@ var AppView = Backbone.View.extend({
         playlist = activeStream ? 
                   { tracks: activeStream.toJSON().playlist } : {};
 
-    this.Playlist = new Playlist(playlist);
+    this.Playlist.set(playlist);
   }
 });
 
