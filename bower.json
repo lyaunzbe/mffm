@@ -13,6 +13,7 @@
     "exoskeleton": "git://github.com/paulmillr/exoskeleton.git#~0.5.1",
     "jquery": "~2.0.3",
     "underscore": "~1.5.2",
-    "backbone-relational": "~0.8.6"
+    "pace": "~0.4.15",
+    "nprogress": "~0.1.2"
   }
 }

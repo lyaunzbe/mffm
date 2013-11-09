@@ -1942,7 +1942,7 @@ _.extend(History.prototype, Events, {
   return Backbone;
 });
 
-},{"./../jquery/jquery.js":2,"./../underscore/underscore.js":3}],2:[function(require,module,exports){
+},{"./../jquery/jquery.js":2,"./../underscore/underscore.js":4}],2:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.0.3
  * http://jquery.com/
@@ -10774,6 +10774,760 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
 })( window );
 
 },{}],3:[function(require,module,exports){
+(function() {
+  var AjaxMonitor, Bar, DocumentMonitor, ElementMonitor, ElementTracker, EventLagMonitor, Events, NoTargetError, RequestIntercept, SOURCE_KEYS, Scaler, SocketRequestTracker, XHRRequestTracker, animation, avgAmplitude, bar, cancelAnimation, cancelAnimationFrame, defaultOptions, extend, extendNative, getFromDOM, getIntercept, handlePushState, init, now, options, requestAnimationFrame, result, runAnimation, scalers, sources, uniScaler, _WebSocket, _XDomainRequest, _XMLHttpRequest, _intercept, _pushState, _ref, _replaceState,
+    __slice = [].slice,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  defaultOptions = {
+    catchupTime: 500,
+    initialRate: .03,
+    minTime: 500,
+    ghostTime: 250,
+    maxProgressPerFrame: 10,
+    easeFactor: 1.25,
+    startOnPageLoad: true,
+    restartOnPushState: true,
+    restartOnRequestAfter: 500,
+    target: 'body',
+    elements: {
+      checkInterval: 100,
+      selectors: ['body']
+    },
+    eventLag: {
+      minSamples: 10,
+      sampleCount: 3,
+      lagThreshold: 3
+    },
+    ajax: {
+      trackMethods: ['GET'],
+      trackWebSockets: false
+    }
+  };
+
+  now = function() {
+    var _ref;
+    return (_ref = typeof performance !== "undefined" && performance !== null ? typeof performance.now === "function" ? performance.now() : void 0 : void 0) != null ? _ref : +(new Date);
+  };
+
+  requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+
+  cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
+
+  if (requestAnimationFrame == null) {
+    requestAnimationFrame = function(fn) {
+      return setTimeout(fn, 50);
+    };
+    cancelAnimationFrame = function(id) {
+      return clearTimeout(id);
+    };
+  }
+
+  runAnimation = function(fn) {
+    var last, tick;
+    last = now();
+    tick = function() {
+      var diff;
+      diff = now() - last;
+      last = now();
+      return fn(diff, function() {
+        return requestAnimationFrame(tick);
+      });
+    };
+    return tick();
+  };
+
+  result = function() {
+    var args, key, obj;
+    obj = arguments[0], key = arguments[1], args = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+    if (typeof obj[key] === 'function') {
+      return obj[key].apply(obj, args);
+    } else {
+      return obj[key];
+    }
+  };
+
+  extend = function() {
+    var key, out, source, sources, val, _i, _len;
+    out = arguments[0], sources = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+    for (_i = 0, _len = sources.length; _i < _len; _i++) {
+      source = sources[_i];
+      if (source) {
+        for (key in source) {
+          if (!__hasProp.call(source, key)) continue;
+          val = source[key];
+          if ((out[key] != null) && typeof out[key] === 'object' && (val != null) && typeof val === 'object') {
+            extend(out[key], val);
+          } else {
+            out[key] = val;
+          }
+        }
+      }
+    }
+    return out;
+  };
+
+  avgAmplitude = function(arr) {
+    var count, sum, v, _i, _len;
+    sum = count = 0;
+    for (_i = 0, _len = arr.length; _i < _len; _i++) {
+      v = arr[_i];
+      sum += Math.abs(v);
+      count++;
+    }
+    return sum / count;
+  };
+
+  getFromDOM = function(key, json) {
+    var data, e, el;
+    if (key == null) {
+      key = 'options';
+    }
+    if (json == null) {
+      json = true;
+    }
+    el = document.querySelector("[data-pace-" + key + "]");
+    if (!el) {
+      return;
+    }
+    data = el.getAttribute("data-pace-" + key);
+    if (!json) {
+      return data;
+    }
+    try {
+      return JSON.parse(data);
+    } catch (_error) {
+      e = _error;
+      return typeof console !== "undefined" && console !== null ? console.error("Error parsing inline pace options", e) : void 0;
+    }
+  };
+
+  if (window.Pace == null) {
+    window.Pace = {};
+  }
+
+  options = Pace.options = extend(defaultOptions, window.paceOptions, getFromDOM());
+
+  NoTargetError = (function(_super) {
+    __extends(NoTargetError, _super);
+
+    function NoTargetError() {
+      _ref = NoTargetError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return NoTargetError;
+
+  })(Error);
+
+  Bar = (function() {
+    function Bar() {
+      this.progress = 0;
+    }
+
+    Bar.prototype.getElement = function() {
+      var targetElement;
+      if (this.el == null) {
+        targetElement = document.querySelector(options.target);
+        if (!targetElement) {
+          throw new NoTargetError;
+        }
+        this.el = document.createElement('div');
+        this.el.className = "pace pace-active";
+        document.body.className = document.body.className.replace('pace-done', '');
+        document.body.className += ' pace-running';
+        this.el.innerHTML = '<div class="pace-progress">\n  <div class="pace-progress-inner"></div>\n</div>\n<div class="pace-activity"></div>';
+        if (targetElement.firstChild != null) {
+          targetElement.insertBefore(this.el, targetElement.firstChild);
+        } else {
+          targetElement.appendChild(this.el);
+        }
+      }
+      return this.el;
+    };
+
+    Bar.prototype.finish = function() {
+      var el;
+      el = this.getElement();
+      el.className = el.className.replace('pace-active', '');
+      el.className += ' pace-inactive';
+      document.body.className = document.body.className.replace('pace-running', '');
+      return document.body.className += ' pace-done';
+    };
+
+    Bar.prototype.update = function(prog) {
+      this.progress = prog;
+      return this.render();
+    };
+
+    Bar.prototype.destroy = function() {
+      this.getElement().parentNode.removeChild(this.getElement());
+      return this.el = void 0;
+    };
+
+    Bar.prototype.render = function() {
+      var el, progressStr;
+      if (document.querySelector(options.target) == null) {
+        return false;
+      }
+      el = this.getElement();
+      el.children[0].style.width = "" + this.progress + "%";
+      if (!this.lastRenderedProgress || this.lastRenderedProgress | 0 !== this.progress | 0) {
+        el.children[0].setAttribute('data-progress-text', "" + (this.progress | 0) + "%");
+        if (this.progress >= 100) {
+          progressStr = '99';
+        } else {
+          progressStr = this.progress < 10 ? "0" : "";
+          progressStr += this.progress | 0;
+        }
+        el.children[0].setAttribute('data-progress', "" + progressStr);
+      }
+      return this.lastRenderedProgress = this.progress;
+    };
+
+    Bar.prototype.done = function() {
+      return this.progress >= 100;
+    };
+
+    return Bar;
+
+  })();
+
+  Events = (function() {
+    function Events() {
+      this.bindings = {};
+    }
+
+    Events.prototype.trigger = function(name, val) {
+      var binding, _i, _len, _ref1, _results;
+      if (this.bindings[name] != null) {
+        _ref1 = this.bindings[name];
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          binding = _ref1[_i];
+          _results.push(binding.call(this, val));
+        }
+        return _results;
+      }
+    };
+
+    Events.prototype.on = function(name, fn) {
+      var _base;
+      if ((_base = this.bindings)[name] == null) {
+        _base[name] = [];
+      }
+      return this.bindings[name].push(fn);
+    };
+
+    return Events;
+
+  })();
+
+  _XMLHttpRequest = window.XMLHttpRequest;
+
+  _XDomainRequest = window.XDomainRequest;
+
+  _WebSocket = window.WebSocket;
+
+  extendNative = function(to, from) {
+    var e, key, val, _results;
+    _results = [];
+    for (key in from.prototype) {
+      try {
+        val = from.prototype[key];
+        if ((to[key] == null) && typeof val !== 'function') {
+          _results.push(to[key] = val);
+        } else {
+          _results.push(void 0);
+        }
+      } catch (_error) {
+        e = _error;
+      }
+    }
+    return _results;
+  };
+
+  RequestIntercept = (function(_super) {
+    __extends(RequestIntercept, _super);
+
+    function RequestIntercept() {
+      var monitorXHR,
+        _this = this;
+      RequestIntercept.__super__.constructor.apply(this, arguments);
+      monitorXHR = function(req) {
+        var _open;
+        _open = req.open;
+        return req.open = function(type, url, async) {
+          var _ref1;
+          if (_ref1 = (type != null ? type : 'GET').toUpperCase(), __indexOf.call(options.ajax.trackMethods, _ref1) >= 0) {
+            _this.trigger('request', {
+              type: type,
+              url: url,
+              request: req
+            });
+          }
+          return _open.apply(req, arguments);
+        };
+      };
+      window.XMLHttpRequest = function(flags) {
+        var req;
+        req = new _XMLHttpRequest(flags);
+        monitorXHR(req);
+        return req;
+      };
+      extendNative(window.XMLHttpRequest, _XMLHttpRequest);
+      if (_XDomainRequest != null) {
+        window.XDomainRequest = function() {
+          var req;
+          req = new _XDomainRequest;
+          monitorXHR(req);
+          return req;
+        };
+        extendNative(window.XDomainRequest, _XDomainRequest);
+      }
+      if ((_WebSocket != null) && options.ajax.trackWebSockets) {
+        window.WebSocket = function(url, protocols) {
+          var req;
+          req = new _WebSocket(url, protocols);
+          _this.trigger('request', {
+            type: 'socket',
+            url: url,
+            protocols: protocols,
+            request: req
+          });
+          return req;
+        };
+        extendNative(window.WebSocket, _WebSocket);
+      }
+    }
+
+    return RequestIntercept;
+
+  })(Events);
+
+  _intercept = null;
+
+  getIntercept = function() {
+    if (_intercept == null) {
+      _intercept = new RequestIntercept;
+    }
+    return _intercept;
+  };
+
+  if (options.restartOnRequestAfter !== false) {
+    getIntercept().on('request', function(_arg) {
+      var args, request, type;
+      type = _arg.type, request = _arg.request;
+      if (!Pace.running) {
+        args = arguments;
+        return setTimeout(function() {
+          var source, stillActive, _i, _len, _ref1, _ref2, _results;
+          if (type === 'socket') {
+            stillActive = request.readyState < 2;
+          } else {
+            stillActive = (0 < (_ref1 = request.readyState) && _ref1 < 4);
+          }
+          if (stillActive) {
+            Pace.restart();
+            _ref2 = Pace.sources;
+            _results = [];
+            for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+              source = _ref2[_i];
+              if (source instanceof AjaxMonitor) {
+                source.watch.apply(source, args);
+                break;
+              } else {
+                _results.push(void 0);
+              }
+            }
+            return _results;
+          }
+        }, options.restartOnRequestAfter);
+      }
+    });
+  }
+
+  AjaxMonitor = (function() {
+    function AjaxMonitor() {
+      var _this = this;
+      this.elements = [];
+      getIntercept().on('request', function() {
+        return _this.watch.apply(_this, arguments);
+      });
+    }
+
+    AjaxMonitor.prototype.watch = function(_arg) {
+      var request, tracker, type;
+      type = _arg.type, request = _arg.request;
+      if (type === 'socket') {
+        tracker = new SocketRequestTracker(request);
+      } else {
+        tracker = new XHRRequestTracker(request);
+      }
+      return this.elements.push(tracker);
+    };
+
+    return AjaxMonitor;
+
+  })();
+
+  XHRRequestTracker = (function() {
+    function XHRRequestTracker(request) {
+      var event, size, _i, _len, _onreadystatechange, _ref1,
+        _this = this;
+      this.progress = 0;
+      if (window.ProgressEvent != null) {
+        size = null;
+        request.addEventListener('progress', function(evt) {
+          if (evt.lengthComputable) {
+            return _this.progress = 100 * evt.loaded / evt.total;
+          } else {
+            return _this.progress = _this.progress + (100 - _this.progress) / 2;
+          }
+        });
+        _ref1 = ['load', 'abort', 'timeout', 'error'];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          event = _ref1[_i];
+          request.addEventListener(event, function() {
+            return _this.progress = 100;
+          });
+        }
+      } else {
+        _onreadystatechange = request.onreadystatechange;
+        request.onreadystatechange = function() {
+          var _ref2;
+          if ((_ref2 = request.readyState) === 0 || _ref2 === 4) {
+            _this.progress = 100;
+          } else if (request.readyState === 3) {
+            _this.progress = 50;
+          }
+          return typeof _onreadystatechange === "function" ? _onreadystatechange.apply(null, arguments) : void 0;
+        };
+      }
+    }
+
+    return XHRRequestTracker;
+
+  })();
+
+  SocketRequestTracker = (function() {
+    function SocketRequestTracker(request) {
+      var event, _i, _len, _ref1,
+        _this = this;
+      this.progress = 0;
+      _ref1 = ['error', 'open'];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        event = _ref1[_i];
+        request.addEventListener(event, function() {
+          return _this.progress = 100;
+        });
+      }
+    }
+
+    return SocketRequestTracker;
+
+  })();
+
+  ElementMonitor = (function() {
+    function ElementMonitor(options) {
+      var selector, _i, _len, _ref1;
+      if (options == null) {
+        options = {};
+      }
+      this.elements = [];
+      if (options.selectors == null) {
+        options.selectors = [];
+      }
+      _ref1 = options.selectors;
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        selector = _ref1[_i];
+        this.elements.push(new ElementTracker(selector));
+      }
+    }
+
+    return ElementMonitor;
+
+  })();
+
+  ElementTracker = (function() {
+    function ElementTracker(selector) {
+      this.selector = selector;
+      this.progress = 0;
+      this.check();
+    }
+
+    ElementTracker.prototype.check = function() {
+      var _this = this;
+      if (document.querySelector(this.selector)) {
+        return this.done();
+      } else {
+        return setTimeout((function() {
+          return _this.check();
+        }), options.elements.checkInterval);
+      }
+    };
+
+    ElementTracker.prototype.done = function() {
+      return this.progress = 100;
+    };
+
+    return ElementTracker;
+
+  })();
+
+  DocumentMonitor = (function() {
+    DocumentMonitor.prototype.states = {
+      loading: 0,
+      interactive: 50,
+      complete: 100
+    };
+
+    function DocumentMonitor() {
+      var _onreadystatechange, _ref1,
+        _this = this;
+      this.progress = (_ref1 = this.states[document.readyState]) != null ? _ref1 : 100;
+      _onreadystatechange = document.onreadystatechange;
+      document.onreadystatechange = function() {
+        if (_this.states[document.readyState] != null) {
+          _this.progress = _this.states[document.readyState];
+        }
+        return typeof _onreadystatechange === "function" ? _onreadystatechange.apply(null, arguments) : void 0;
+      };
+    }
+
+    return DocumentMonitor;
+
+  })();
+
+  EventLagMonitor = (function() {
+    function EventLagMonitor() {
+      var avg, interval, last, points, samples,
+        _this = this;
+      this.progress = 0;
+      avg = 0;
+      samples = [];
+      points = 0;
+      last = now();
+      interval = setInterval(function() {
+        var diff;
+        diff = now() - last - 50;
+        last = now();
+        samples.push(diff);
+        if (samples.length > options.eventLag.sampleCount) {
+          samples.shift();
+        }
+        avg = avgAmplitude(samples);
+        if (++points >= options.eventLag.minSamples && avg < options.eventLag.lagThreshold) {
+          _this.progress = 100;
+          return clearInterval(interval);
+        } else {
+          return _this.progress = 100 * (3 / (avg + 3));
+        }
+      }, 50);
+    }
+
+    return EventLagMonitor;
+
+  })();
+
+  Scaler = (function() {
+    function Scaler(source) {
+      this.source = source;
+      this.last = this.sinceLastUpdate = 0;
+      this.rate = options.initialRate;
+      this.catchup = 0;
+      this.progress = this.lastProgress = 0;
+      if (this.source != null) {
+        this.progress = result(this.source, 'progress');
+      }
+    }
+
+    Scaler.prototype.tick = function(frameTime, val) {
+      var scaling;
+      if (val == null) {
+        val = result(this.source, 'progress');
+      }
+      if (val >= 100) {
+        this.done = true;
+      }
+      if (val === this.last) {
+        this.sinceLastUpdate += frameTime;
+      } else {
+        if (this.sinceLastUpdate) {
+          this.rate = (val - this.last) / this.sinceLastUpdate;
+        }
+        this.catchup = (val - this.progress) / options.catchupTime;
+        this.sinceLastUpdate = 0;
+        this.last = val;
+      }
+      if (val > this.progress) {
+        this.progress += this.catchup * frameTime;
+      }
+      scaling = 1 - Math.pow(this.progress / 100, options.easeFactor);
+      this.progress += scaling * this.rate * frameTime;
+      this.progress = Math.min(this.lastProgress + options.maxProgressPerFrame, this.progress);
+      this.progress = Math.max(0, this.progress);
+      this.progress = Math.min(100, this.progress);
+      this.lastProgress = this.progress;
+      return this.progress;
+    };
+
+    return Scaler;
+
+  })();
+
+  sources = null;
+
+  scalers = null;
+
+  bar = null;
+
+  uniScaler = null;
+
+  animation = null;
+
+  cancelAnimation = null;
+
+  Pace.running = false;
+
+  handlePushState = function() {
+    if (options.restartOnPushState) {
+      return Pace.restart();
+    }
+  };
+
+  if (window.history.pushState != null) {
+    _pushState = window.history.pushState;
+    window.history.pushState = function() {
+      handlePushState();
+      return _pushState.apply(window.history, arguments);
+    };
+  }
+
+  if (window.history.replaceState != null) {
+    _replaceState = window.history.replaceState;
+    window.history.replaceState = function() {
+      handlePushState();
+      return _replaceState.apply(window.history, arguments);
+    };
+  }
+
+  SOURCE_KEYS = {
+    ajax: AjaxMonitor,
+    elements: ElementMonitor,
+    document: DocumentMonitor,
+    eventLag: EventLagMonitor
+  };
+
+  (init = function() {
+    var source, type, _i, _j, _len, _len1, _ref1, _ref2, _ref3;
+    Pace.sources = sources = [];
+    _ref1 = ['ajax', 'elements', 'document', 'eventLag'];
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      type = _ref1[_i];
+      if (options[type] !== false) {
+        sources.push(new SOURCE_KEYS[type](options[type]));
+      }
+    }
+    _ref3 = (_ref2 = options.extraSources) != null ? _ref2 : [];
+    for (_j = 0, _len1 = _ref3.length; _j < _len1; _j++) {
+      source = _ref3[_j];
+      sources.push(new source(options));
+    }
+    Pace.bar = bar = new Bar;
+    scalers = [];
+    return uniScaler = new Scaler;
+  })();
+
+  Pace.stop = function() {
+    Pace.running = false;
+    bar.destroy();
+    cancelAnimation = true;
+    if (animation != null) {
+      if (typeof cancelAnimationFrame === "function") {
+        cancelAnimationFrame(animation);
+      }
+      animation = null;
+    }
+    return init();
+  };
+
+  Pace.restart = function() {
+    Pace.stop();
+    return Pace.go();
+  };
+
+  Pace.go = function() {
+    Pace.running = true;
+    bar.render();
+    cancelAnimation = false;
+    return animation = runAnimation(function(frameTime, enqueueNextFrame) {
+      var avg, count, done, element, elements, i, j, remaining, scaler, scalerList, source, start, sum, _i, _j, _len, _len1, _ref1;
+      remaining = 100 - bar.progress;
+      count = sum = 0;
+      done = true;
+      for (i = _i = 0, _len = sources.length; _i < _len; i = ++_i) {
+        source = sources[i];
+        scalerList = scalers[i] != null ? scalers[i] : scalers[i] = [];
+        elements = (_ref1 = source.elements) != null ? _ref1 : [source];
+        for (j = _j = 0, _len1 = elements.length; _j < _len1; j = ++_j) {
+          element = elements[j];
+          scaler = scalerList[j] != null ? scalerList[j] : scalerList[j] = new Scaler(element);
+          done &= scaler.done;
+          if (scaler.done) {
+            continue;
+          }
+          count++;
+          sum += scaler.tick(frameTime);
+        }
+      }
+      avg = sum / count;
+      bar.update(uniScaler.tick(frameTime, avg));
+      start = now();
+      if (bar.done() || done || cancelAnimation) {
+        bar.update(100);
+        return setTimeout(function() {
+          bar.finish();
+          return Pace.running = false;
+        }, Math.max(options.ghostTime, Math.min(options.minTime, now() - start)));
+      } else {
+        return enqueueNextFrame();
+      }
+    });
+  };
+
+  Pace.start = function(_options) {
+    extend(options, _options);
+    Pace.running = true;
+    try {
+      bar.render();
+    } catch (_error) {
+      NoTargetError = _error;
+    }
+    if (!document.querySelector('.pace')) {
+      return setTimeout(Pace.start, 50);
+    } else {
+      return Pace.go();
+    }
+  };
+
+  if (typeof define === 'function' && define.amd) {
+    define(function() {
+      return Pace;
+    });
+  } else if (typeof exports === 'object') {
+    module.exports = Pace;
+  } else {
+    if (options.startOnPageLoad) {
+      Pace.start();
+    }
+  }
+
+}).call(this);
+
+},{}],4:[function(require,module,exports){
 //     Underscore.js 1.5.2
 //     http://underscorejs.org
 //     (c) 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -12051,21 +12805,29 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
 
 }).call(this);
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 _ = require("./../bower_components/underscore/underscore.js");
 Backbone = require('../bower_components/exoskeleton');
 Backbone.LocalStorage = require("backbone.localstorage");
 Backbone.sync = Backbone.LocalStorage.sync;
+
+Pace = require('../bower_components/pace/pace.js');
+
 YT = {};
+
+Players = {
+  yt: null
+}
+
 var AppView = require('./views/AppView');
 
+
 window.onYouTubeIframeAPIReady = function() {
-  console.log(YT);
   $(document).ready(function(){
     new AppView();
   });
 };
-},{"../bower_components/exoskeleton":1,"./../bower_components/underscore/underscore.js":3,"./views/AppView":13,"backbone.localstorage":18}],5:[function(require,module,exports){
+},{"../bower_components/exoskeleton":1,"../bower_components/pace/pace.js":3,"./../bower_components/underscore/underscore.js":4,"./views/AppView":13,"backbone.localstorage":18}],6:[function(require,module,exports){
 var Stream = require('../models/stream');
 
 var Streams = Backbone.Collection.extend({
@@ -12075,9 +12837,9 @@ var Streams = Backbone.Collection.extend({
 });
 
 module.exports = _.extend(Streams, Backbone.Events);
-},{"../models/stream":9}],6:[function(require,module,exports){
-module.exports=require(5)
-},{"../models/stream":9}],7:[function(require,module,exports){
+},{"../models/stream":10}],7:[function(require,module,exports){
+module.exports=require(6)
+},{"../models/stream":10}],8:[function(require,module,exports){
 var Stream = Backbone.Model.extend({
   defaults: {
     active: false
@@ -12088,7 +12850,7 @@ var Stream = Backbone.Model.extend({
 });
 
 module.exports = Stream;
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var Playlist = Backbone.Model.extend({
   defaults: {
     index: 0,
@@ -12099,10 +12861,10 @@ var Playlist = Backbone.Model.extend({
   }
 });
 
-module.exports = Playlist;
-},{}],9:[function(require,module,exports){
-module.exports=require(7)
+module.exports = _.extend(Playlist, Backbone.Events);
 },{}],10:[function(require,module,exports){
+module.exports=require(8)
+},{}],11:[function(require,module,exports){
 var StreamCtrl = (function(){
 
   _private = {
@@ -12191,20 +12953,6 @@ var StreamCtrl = (function(){
 })();
 
 module.exports = StreamCtrl;
-},{}],11:[function(require,module,exports){
-var YTPlayer = new YT.Player('stereo', {
-  events: {
-    onReady: function(e){
-
-    },
-    onStateChange: function(e){
-
-    },
-  }    
-});
-
-console.log(YTPlayer);
-module.exports = YTPlayer;
 },{}],12:[function(require,module,exports){
 var JST = {
   streamlist: _.template([
@@ -12222,10 +12970,23 @@ var JST = {
     '<% _.each(items, function(item, i){ %>',
       '<li data-index="<%= i%>">',
         '<i class="fa fa-play"></i>',
-        '<%= _.unescape(item.title) %>',
+        '<%= _.unescape(item.title) %>', 
       '</li>',
     '<% }); %>'
-    ].join(' '))
+    ].join(' ')),
+
+  player: _.template([
+    '<div class="controls">',
+      '<i class="back fa fa-fast-backward" ></i>',
+      '<i class="play fa fa-play" ></i>',
+      '<i class="forward fa fa-fast-forward" ></i>',
+    '</div>',
+    '<div class="progress">',
+      '<div class="track-progress">',
+        '<div class="slider"></div>',
+      '</div>',
+    '</div>'
+  ].join(' '))
 };
 
 module.exports = JST;
@@ -12240,14 +13001,13 @@ var AppView = Backbone.View.extend({
   el: '#app',
 
   render: function(){
-    this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist });
+    console.log('rerendering');
+    this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist});
 
     this.$el.append(this.MainView.render());
   },
 
   initialize: function(){
-    this.YTPlayer    = require('../util/YTPlayer');  
-    
     this.Streams = new Streams();
     this.Streams.fetch();
     this.SidebarView = new SidebarView({ collection: this.Streams});
@@ -12268,25 +13028,227 @@ var AppView = Backbone.View.extend({
 });
 
 module.exports = AppView;
-},{"../collections/streams":6,"../models/playlist":8,"../util/YTPlayer":11,"./mainView":16,"./sidebarView":17}],14:[function(require,module,exports){
+},{"../collections/streams":7,"../models/playlist":9,"./mainView":16,"./sidebarView":17}],14:[function(require,module,exports){
+var JST = require('../util/templates');
 
-},{}],15:[function(require,module,exports){
+var PlayerView = Backbone.View.extend({
+  el: '.player',
+
+  events : {
+    'click .controls i.fa-play' : 'onPlay',
+    'click .controls i.fa-pause' : 'onPause',
+    // 'click .controls i.fa-fast-forward' : 'onFF',
+    // 'click .controls i.fa-fast-backward' : 'onFB'
+    'click .track-progress' : 'onSeek'
+
+  },
+
+  template: JST['player'],
+  render: function(){
+    this.$el.empty();
+
+    this.$el.append(this.template);
+  },
+  initialize: function(opts){
+    var self = this;
+    this.Playlist = opts.playlist;
+    this.listenTo(this.Playlist, 'playlistSelection', this.playlistSelection);
+
+
+    if(!Players.yt){
+      Players.yt = new YT.Player('stereo', {
+        events: {
+          'onReady': self.onYTPlayerReady.bind(self),
+          'onStateChange': self.onYTPlayerStateChange.bind(self),
+        }    
+      });
+    }else{
+      var tracks = this.Playlist.get('tracks');
+      Players.yt.cueVideoById(tracks[0].id);
+      this.render();
+    }
+  },
+
+  onPlay: function(e){
+    var yt    = Players.yt;
+
+    yt.playVideo();
+    this.Playlist.set('status', 1);
+
+    var ctrl = $(e.currentTarget);
+    ctrl.removeClass('play fa-play');
+    ctrl.addClass('pause fa-pause');
+  },
+
+  onPause: function(e){
+    var yt    = Players.yt;
+
+    yt.pauseVideo();
+    this.Playlist.set('status', 0);
+
+    var ctrl = $(e.currentTarget);
+    ctrl.removeClass('pause fa-pause');
+    ctrl.addClass('play fa-play');
+  },
+
+
+  onYTPlayerReady: function(e){
+    this.render();
+    this.Playlist.trigger('playerLoaded');
+    Players.yt = e.target,
+        tracks = this.Playlist.get('tracks');
+    yt = Players.yt;
+
+    yt.cueVideoById(tracks[0].id);
+  },
+
+  onYTPlayerStateChange: function(e){
+    var self = this;
+    var trackProgress = function(){
+      var yt = Players.yt;
+
+      var progress = (yt.getCurrentTime() / yt.getDuration()) * 100;
+      var width = $('.track-progress .slider').css('width', progress+'%');
+    }
+
+    console.log(e.data);
+
+    switch(e.data){
+      case -1:
+        Pace.restart();
+        Pace.start({ ghostTime:500});
+      case 1:
+
+        setInterval(trackProgress,200);
+        break;
+      case 2:
+        clearInterval(trackProgress);
+        break;
+    }
+  },
+
+  playlistSelection: function(){
+    var yt    = Players.yt,
+        index = this.Playlist.get('index'),
+        tracks = this.Playlist.get('tracks');
+
+    yt.loadVideoById(tracks[index].id);
+    this.Playlist.set('status', 1);
+    this.$el.find('i.fa-play')
+      .removeClass().addClass('pause fa fa-pause');
+  },
+
+  onSeek: function(e){
+    var status = this.Playlist.get('status');
+    if(status != -1){
+      var yt = Players.yt,
+          parentOffset = $(e.currentTarget).parent().offset();
+
+
+     //or $(this).offset(); if you really just want the current element's offset
+      var raw = (e.pageX - parentOffset.left)-30,
+          progress = (raw/600) * 100;
+
+      var time = (progress*yt.getDuration()) / 100;
+
+      yt.seekTo(time);
+      var width = $('.track-progress .slider').css('width', progress+'%');
+
+    }
+  
+  }
+});
+
+module.exports = PlayerView;
+},{"../util/templates":12}],15:[function(require,module,exports){
 JST = JST = require('../util/templates');
 
 var PlaylistView = Backbone.View.extend({
   el: '.playlist',
 
   template: JST['playlist'],
+
+  events: {
+    'mouseover li' : 'overItem',
+    'mouseout li'  : 'outItem',
+    'click li i.fa-play' : 'selectItem'
+  },
+
   render: function(){
     var playlist = {items: this.Playlist.toJSON().tracks};
-    console.log(playlist);
     this.$el.empty();
     this.$el.append(this.template(playlist));
+    Pace.stop();
+    console.log('playlistrender')
+
   },
   initialize: function(opts){
     this.Playlist = opts.playlist;
-    this.render();
+    this.listenTo(this.Playlist, 'change:status', this.statusChange);
+    this.listenTo(this.Playlist, 'change:index', this.statusChange);
+    this.listenTo(this.Playlist, 'playerLoaded', this.render);
+  },
+
+  overItem: function(e){
+    var item = $(e.currentTarget);
+
+    var icon = $('.controls i.fa-pause').length > 0 ? 'fa fa-volume-up' : 'fa fa-volume-off';
+
+    if(item.hasClass('active')) 
+      item.find('i').removeClass().addClass('fa fa-play');
+
+    item.find('i').css('visibility', 'visible');
+
+  },
+
+  outItem: function(e){
+    var item = $(e.currentTarget);
+
+    var icon = $('.controls i.fa-pause').length > 0 ? 'fa fa-volume-up' : 'fa fa-volume-off';
+
+    item.find('i').css('visibility', 'hidden');
+    
+    if(item.hasClass('active')) 
+      item.find('i').removeClass().addClass(icon).css('visibility', 'visible');
+  },
+
+  selectItem: function(e){
+    var item = $(e.currentTarget).parent('li'),
+        index = item.data('index');
+    
+  
+    this.Playlist.set('index', index);
+    this.Playlist.trigger('playlistSelection');
+    
+  },
+
+  statusChange: function(e){
+    var status = e.get('status'),
+        index  = e.get('index');
+
+    this.$el.find('li').removeClass();
+    this.$el.find('i').removeClass()
+      .addClass('fa fa-play').css('visibility', 'hidden');
+
+    switch (status){
+      case 0:
+      this.$el.find('[data-index="'+index+'"]')
+          .addClass('active')
+          .find('i').removeClass()
+          .addClass('fa fa-volume-off').css('visibility', 'visible');
+        break;
+      case 1:
+        this.$el.find('[data-index="'+index+'"]')
+          .addClass('active')
+          .find('i').removeClass()
+          .addClass('fa fa-volume-up').css('visibility', 'visible');
+        break;
+      default:
+
+    }
+
   }
+
 });
 
 module.exports = PlaylistView;
@@ -12297,8 +13259,12 @@ var PlaylistView = require('./PlaylistView'),
 var MainView = Backbone.View.extend({
   el: '.main',
   render: function(){
-    // this.PlayerView = new PlayerView({})
+    this.PlayerView = new PlayerView({
+      playlist: this.Playlist
+    });
+    
     this.PlaylistView = new PlaylistView({playlist: this.Playlist});
+    Pace.start();
   },
   initialize: function(opts){
     this.Playlist = opts.playlist;
@@ -12388,7 +13354,7 @@ var SidebarView = Backbone.View.extend({
 });
 
 module.exports = SidebarView;
-},{"../collections/Streams":5,"../models/Stream":7,"../util/StreamCtrl":10,"../util/templates":12}],18:[function(require,module,exports){
+},{"../collections/Streams":6,"../models/Stream":8,"../util/StreamCtrl":11,"../util/templates":12}],18:[function(require,module,exports){
 /**
  * Backbone localStorage Adapter
  * Version 1.1.7
@@ -15422,5 +16388,5 @@ return Backbone.LocalStorage;
 
 }).call(this);
 
-},{}]},{},[4])
+},{}]},{},[5])
 ;

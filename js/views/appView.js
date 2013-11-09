@@ -8,14 +8,13 @@ var AppView = Backbone.View.extend({
   el: '#app',
 
   render: function(){
-    this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist });
+    console.log('rerendering');
+    this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist});
 
     this.$el.append(this.MainView.render());
   },
 
   initialize: function(){
-    this.YTPlayer    = require('../util/YTPlayer');  
-    
     this.Streams = new Streams();
     this.Streams.fetch();
     this.SidebarView = new SidebarView({ collection: this.Streams});

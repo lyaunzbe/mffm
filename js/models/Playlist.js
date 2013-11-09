@@ -8,4 +8,4 @@ var Playlist = Backbone.Model.extend({
   }
 });
 
-module.exports = Playlist;
+module.exports = _.extend(Playlist, Backbone.Events);

@@ -16,8 +16,6 @@
     "url": "https://github.com/lyaunzbe/mffm/issues"
   },
   "dependencies": {
-    "level-js": "~1.0.8",
-    "levelup": "~0.17.0",
-    "debowerify": "~0.3.0"
+    "backbone.localstorage": "~1.1.7"
   }
 }
