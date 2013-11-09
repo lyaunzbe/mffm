@@ -13011,12 +13011,16 @@ var JST = {
     ].join('')),
 
   playlist: _.template([
-    '<% _.each(items, function(item, i){ %>',
-      '<li data-index="<%= i%>">',
-        '<i class="fa fa-play"></i>',
-        '<%= _.unescape(item.title) %>', 
-      '</li>',
-    '<% }); %>'
+    '<% if(items) { %>',
+      '<% _.each(items, function(item, i){ %>',
+        '<li data-index="<%= i%>">',
+          '<i class="fa fa-play"></i>',
+          '<%= _.unescape(item.title) %>', 
+        '</li>',
+      '<% }); %>',
+    '<% } else { %>',
+      '<center> Start listening your favorite subreddits. </center>',
+    '<% } %>'
     ].join(' ')),
 
   player: _.template([
@@ -13186,8 +13190,9 @@ var PlayerView = Backbone.View.extend({
     Players.yt = e.target,
         tracks = this.Playlist.get('tracks');
     yt = Players.yt;
-
-    yt.cueVideoById(tracks[0].id);
+    
+    if(tracks)
+      yt.cueVideoById(tracks[0].id);
   },
 
   onYTPlayerStateChange: function(e){

@@ -108,8 +108,9 @@ var PlayerView = Backbone.View.extend({
     Players.yt = e.target,
         tracks = this.Playlist.get('tracks');
     yt = Players.yt;
-
-    yt.cueVideoById(tracks[0].id);
+    
+    if(tracks)
+      yt.cueVideoById(tracks[0].id);
   },
 
   onYTPlayerStateChange: function(e){

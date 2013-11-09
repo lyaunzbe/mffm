@@ -11,12 +11,16 @@ var JST = {
     ].join('')),
 
   playlist: _.template([
-    '<% _.each(items, function(item, i){ %>',
-      '<li data-index="<%= i%>">',
-        '<i class="fa fa-play"></i>',
-        '<%= _.unescape(item.title) %>', 
-      '</li>',
-    '<% }); %>'
+    '<% if(items) { %>',
+      '<% _.each(items, function(item, i){ %>',
+        '<li data-index="<%= i%>">',
+          '<i class="fa fa-play"></i>',
+          '<%= _.unescape(item.title) %>', 
+        '</li>',
+      '<% }); %>',
+    '<% } else { %>',
+      '<center> Start listening your favorite subreddits. </center>',
+    '<% } %>'
     ].join(' ')),
 
   player: _.template([
