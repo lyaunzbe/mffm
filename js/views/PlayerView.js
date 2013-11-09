@@ -6,8 +6,8 @@ var PlayerView = Backbone.View.extend({
   events : {
     'click .controls i.fa-play' : 'onPlay',
     'click .controls i.fa-pause' : 'onPause',
-    // 'click .controls i.fa-fast-forward' : 'onFF',
-    // 'click .controls i.fa-fast-backward' : 'onFB'
+    'click .controls i.fa-fast-forward' : 'onFF',
+    'click .controls i.fa-fast-backward' : 'onFB',
     'click .track-progress' : 'onSeek'
 
   },
@@ -17,12 +17,17 @@ var PlayerView = Backbone.View.extend({
     this.$el.empty();
 
     this.$el.append(this.template);
+    
+    Pace.stop();
   },
   initialize: function(opts){
     var self = this;
+    this.progressBar = true;
     this.Playlist = opts.playlist;
-    this.listenTo(this.Playlist, 'playlistSelection', this.playlistSelection);
+    this.Streams = opts.streams;
 
+    this.listenTo(this.Streams, 'activeStreamChange', this.disableProgressBar);
+    this.listenTo(this.Playlist, 'playlistSelection', this.playlistSelection);
 
     if(!Players.yt){
       Players.yt = new YT.Player('stereo', {
@@ -60,6 +65,42 @@ var PlayerView = Backbone.View.extend({
     ctrl.addClass('play fa-play');
   },
 
+  onFF: function(){
+    this.Playlist.set('status', -1);
+    var cindex = this.Playlist.get('index'),
+        tracks = this.Playlist.get('tracks'),
+        yt    = Players.yt;
+
+    if(cindex < (tracks.length-1)){
+      cindex++;
+      this.Playlist.set('index', cindex);
+      this.Playlist.set('status', 1);
+      yt.loadVideoById(tracks[cindex].id);
+    }else{
+      // Need to handle the case where we are 
+      // at the end of the playlist.
+      yt.stopVideo();
+    }
+  },
+
+  onFB: function(){
+    this.Playlist.set('status', -1);
+    var cindex = this.Playlist.get('index'),
+        tracks = this.Playlist.get('tracks'),
+        yt    = Players.yt;
+
+    if(cindex > 0){
+      cindex--;
+      this.Playlist.set('index', cindex);
+      this.Playlist.set('status', 1);
+      yt.loadVideoById(tracks[cindex].id);
+    }else{
+      // Need to handle the case where we are 
+      // at the beginning of the playlist.
+      yt.stopVideo();
+
+    }
+  },
 
   onYTPlayerReady: function(e){
     this.render();
@@ -80,14 +121,14 @@ var PlayerView = Backbone.View.extend({
       var width = $('.track-progress .slider').css('width', progress+'%');
     }
 
-    console.log(e.data);
 
     switch(e.data){
       case -1:
-        Pace.restart();
-        Pace.start({ ghostTime:500});
+        if(this.progressBar){
+          Pace.restart();
+          Pace.start({ ghostTime:500});
+        }else{ this.progressBar = true}
       case 1:
-
         setInterval(trackProgress,200);
         break;
       case 2:
@@ -114,7 +155,6 @@ var PlayerView = Backbone.View.extend({
           parentOffset = $(e.currentTarget).parent().offset();
 
 
-     //or $(this).offset(); if you really just want the current element's offset
       var raw = (e.pageX - parentOffset.left)-30,
           progress = (raw/600) * 100;
 
@@ -125,6 +165,10 @@ var PlayerView = Backbone.View.extend({
 
     }
   
+  },
+
+  disableProgressBar: function(){
+    this.progressBar = false;
   }
 });
 

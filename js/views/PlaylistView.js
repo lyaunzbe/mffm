@@ -15,12 +15,11 @@ var PlaylistView = Backbone.View.extend({
     var playlist = {items: this.Playlist.toJSON().tracks};
     this.$el.empty();
     this.$el.append(this.template(playlist));
-    Pace.stop();
-    console.log('playlistrender')
 
   },
   initialize: function(opts){
     this.Playlist = opts.playlist;
+
     this.listenTo(this.Playlist, 'change:status', this.statusChange);
     this.listenTo(this.Playlist, 'change:index', this.statusChange);
     this.listenTo(this.Playlist, 'playerLoaded', this.render);

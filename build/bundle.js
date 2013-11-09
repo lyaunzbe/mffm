@@ -10775,7 +10775,7 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
 
 },{}],3:[function(require,module,exports){
 (function() {
-  var AjaxMonitor, Bar, DocumentMonitor, ElementMonitor, ElementTracker, EventLagMonitor, Events, NoTargetError, RequestIntercept, SOURCE_KEYS, Scaler, SocketRequestTracker, XHRRequestTracker, animation, avgAmplitude, bar, cancelAnimation, cancelAnimationFrame, defaultOptions, extend, extendNative, getFromDOM, getIntercept, handlePushState, init, now, options, requestAnimationFrame, result, runAnimation, scalers, sources, uniScaler, _WebSocket, _XDomainRequest, _XMLHttpRequest, _intercept, _pushState, _ref, _replaceState,
+  var AjaxMonitor, Bar, DocumentMonitor, ElementMonitor, ElementTracker, EventLagMonitor, Events, NoTargetError, RequestIntercept, SOURCE_KEYS, Scaler, SocketRequestTracker, XHRRequestTracker, animation, avgAmplitude, bar, cancelAnimation, cancelAnimationFrame, defaultOptions, extend, extendNative, getFromDOM, getIntercept, handlePushState, ignoreStack, init, now, options, requestAnimationFrame, result, runAnimation, scalers, shouldTrack, sources, uniScaler, _WebSocket, _XDomainRequest, _XMLHttpRequest, _intercept, _pushState, _ref, _replaceState,
     __slice = [].slice,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -10785,7 +10785,7 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
     catchupTime: 500,
     initialRate: .03,
     minTime: 500,
-    ghostTime: 250,
+    ghostTime: 500,
     maxProgressPerFrame: 10,
     easeFactor: 1.25,
     startOnPageLoad: true,
@@ -10963,7 +10963,11 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
     };
 
     Bar.prototype.destroy = function() {
-      this.getElement().parentNode.removeChild(this.getElement());
+      try {
+        this.getElement().parentNode.removeChild(this.getElement());
+      } catch (_error) {
+        NoTargetError = _error;
+      }
       return this.el = void 0;
     };
 
@@ -11049,6 +11053,44 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
     return _results;
   };
 
+  ignoreStack = [];
+
+  Pace.ignore = function() {
+    var args, fn, ret;
+    fn = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+    ignoreStack.unshift('ignore');
+    ret = fn.apply(null, args);
+    ignoreStack.shift();
+    return ret;
+  };
+
+  Pace.track = function() {
+    var args, fn, ret;
+    fn = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+    ignoreStack.unshift('track');
+    ret = fn.apply(null, args);
+    ignoreStack.shift();
+    return ret;
+  };
+
+  shouldTrack = function(method) {
+    var _ref1;
+    if (method == null) {
+      method = 'GET';
+    }
+    if (ignoreStack[0] === 'track') {
+      return 'force';
+    }
+    if (!ignoreStack.length && options.ajax) {
+      if (method === 'socket' && options.ajax.trackWebSockets) {
+        return true;
+      } else if (_ref1 = method.toUpperCase(), __indexOf.call(options.ajax.trackMethods, _ref1) >= 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   RequestIntercept = (function(_super) {
     __extends(RequestIntercept, _super);
 
@@ -11060,8 +11102,7 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
         var _open;
         _open = req.open;
         return req.open = function(type, url, async) {
-          var _ref1;
-          if (_ref1 = (type != null ? type : 'GET').toUpperCase(), __indexOf.call(options.ajax.trackMethods, _ref1) >= 0) {
+          if (shouldTrack(type)) {
             _this.trigger('request', {
               type: type,
               url: url,
@@ -11091,12 +11132,14 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
         window.WebSocket = function(url, protocols) {
           var req;
           req = new _WebSocket(url, protocols);
-          _this.trigger('request', {
-            type: 'socket',
-            url: url,
-            protocols: protocols,
-            request: req
-          });
+          if (shouldTrack('socket')) {
+            _this.trigger('request', {
+              type: 'socket',
+              url: url,
+              protocols: protocols,
+              request: req
+            });
+          }
           return req;
         };
         extendNative(window.WebSocket, _WebSocket);
@@ -11116,38 +11159,40 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
     return _intercept;
   };
 
-  if (options.restartOnRequestAfter !== false) {
-    getIntercept().on('request', function(_arg) {
-      var args, request, type;
-      type = _arg.type, request = _arg.request;
-      if (!Pace.running) {
-        args = arguments;
-        return setTimeout(function() {
-          var source, stillActive, _i, _len, _ref1, _ref2, _results;
-          if (type === 'socket') {
-            stillActive = request.readyState < 2;
-          } else {
-            stillActive = (0 < (_ref1 = request.readyState) && _ref1 < 4);
-          }
-          if (stillActive) {
-            Pace.restart();
-            _ref2 = Pace.sources;
-            _results = [];
-            for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-              source = _ref2[_i];
-              if (source instanceof AjaxMonitor) {
-                source.watch.apply(source, args);
-                break;
-              } else {
-                _results.push(void 0);
-              }
-            }
-            return _results;
-          }
-        }, options.restartOnRequestAfter);
+  getIntercept().on('request', function(_arg) {
+    var after, args, request, type;
+    type = _arg.type, request = _arg.request;
+    if (!Pace.running && (options.restartOnRequestAfter !== false || shouldTrack(type) === 'force')) {
+      args = arguments;
+      after = options.restartOnRequestAfter || 0;
+      if (typeof after === 'boolean') {
+        after = 0;
       }
-    });
-  }
+      return setTimeout(function() {
+        var source, stillActive, _i, _len, _ref1, _ref2, _results;
+        if (type === 'socket') {
+          stillActive = request.readyState < 2;
+        } else {
+          stillActive = (0 < (_ref1 = request.readyState) && _ref1 < 4);
+        }
+        if (stillActive) {
+          Pace.restart();
+          _ref2 = Pace.sources;
+          _results = [];
+          for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+            source = _ref2[_i];
+            if (source instanceof AjaxMonitor) {
+              source.watch.apply(source, args);
+              break;
+            } else {
+              _results.push(void 0);
+            }
+          }
+          return _results;
+        }
+      }, after);
+    }
+  });
 
   AjaxMonitor = (function() {
     function AjaxMonitor() {
@@ -11456,7 +11501,7 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
 
   Pace.restart = function() {
     Pace.stop();
-    return Pace.go();
+    return Pace.start();
   };
 
   Pace.go = function() {
@@ -11526,7 +11571,6 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
   }
 
 }).call(this);
-
 },{}],4:[function(require,module,exports){
 //     Underscore.js 1.5.2
 //     http://underscorejs.org
@@ -13001,6 +13045,7 @@ var AppView = Backbone.View.extend({
   el: '#app',
 
   render: function(){
+
     console.log('rerendering');
     this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist});
 
@@ -13016,6 +13061,8 @@ var AppView = Backbone.View.extend({
     this.listenTo(this.Streams, 'activeStreamChange', this.playlistChange);
     this.listenTo(this.Streams, 'activeStreamChange', this.render);
     this.render();
+    Pace.start();
+
   },
 
   playlistChange: function(){
@@ -13037,8 +13084,8 @@ var PlayerView = Backbone.View.extend({
   events : {
     'click .controls i.fa-play' : 'onPlay',
     'click .controls i.fa-pause' : 'onPause',
-    // 'click .controls i.fa-fast-forward' : 'onFF',
-    // 'click .controls i.fa-fast-backward' : 'onFB'
+    'click .controls i.fa-fast-forward' : 'onFF',
+    'click .controls i.fa-fast-backward' : 'onFB',
     'click .track-progress' : 'onSeek'
 
   },
@@ -13048,12 +13095,17 @@ var PlayerView = Backbone.View.extend({
     this.$el.empty();
 
     this.$el.append(this.template);
+    
+    Pace.stop();
   },
   initialize: function(opts){
     var self = this;
+    this.progressBar = true;
     this.Playlist = opts.playlist;
-    this.listenTo(this.Playlist, 'playlistSelection', this.playlistSelection);
+    this.Streams = opts.streams;
 
+    this.listenTo(this.Streams, 'activeStreamChange', this.disableProgressBar);
+    this.listenTo(this.Playlist, 'playlistSelection', this.playlistSelection);
 
     if(!Players.yt){
       Players.yt = new YT.Player('stereo', {
@@ -13091,6 +13143,42 @@ var PlayerView = Backbone.View.extend({
     ctrl.addClass('play fa-play');
   },
 
+  onFF: function(){
+    this.Playlist.set('status', -1);
+    var cindex = this.Playlist.get('index'),
+        tracks = this.Playlist.get('tracks'),
+        yt    = Players.yt;
+
+    if(cindex < (tracks.length-1)){
+      cindex++;
+      this.Playlist.set('index', cindex);
+      this.Playlist.set('status', 1);
+      yt.loadVideoById(tracks[cindex].id);
+    }else{
+      // Need to handle the case where we are 
+      // at the end of the playlist.
+      yt.stopVideo();
+    }
+  },
+
+  onFB: function(){
+    this.Playlist.set('status', -1);
+    var cindex = this.Playlist.get('index'),
+        tracks = this.Playlist.get('tracks'),
+        yt    = Players.yt;
+
+    if(cindex > 0){
+      cindex--;
+      this.Playlist.set('index', cindex);
+      this.Playlist.set('status', 1);
+      yt.loadVideoById(tracks[cindex].id);
+    }else{
+      // Need to handle the case where we are 
+      // at the beginning of the playlist.
+      yt.stopVideo();
+
+    }
+  },
 
   onYTPlayerReady: function(e){
     this.render();
@@ -13111,14 +13199,14 @@ var PlayerView = Backbone.View.extend({
       var width = $('.track-progress .slider').css('width', progress+'%');
     }
 
-    console.log(e.data);
 
     switch(e.data){
       case -1:
-        Pace.restart();
-        Pace.start({ ghostTime:500});
+        if(this.progressBar){
+          Pace.restart();
+          Pace.start({ ghostTime:500});
+        }else{ this.progressBar = true}
       case 1:
-
         setInterval(trackProgress,200);
         break;
       case 2:
@@ -13145,7 +13233,6 @@ var PlayerView = Backbone.View.extend({
           parentOffset = $(e.currentTarget).parent().offset();
 
 
-     //or $(this).offset(); if you really just want the current element's offset
       var raw = (e.pageX - parentOffset.left)-30,
           progress = (raw/600) * 100;
 
@@ -13156,6 +13243,10 @@ var PlayerView = Backbone.View.extend({
 
     }
   
+  },
+
+  disableProgressBar: function(){
+    this.progressBar = false;
   }
 });
 
@@ -13178,12 +13269,11 @@ var PlaylistView = Backbone.View.extend({
     var playlist = {items: this.Playlist.toJSON().tracks};
     this.$el.empty();
     this.$el.append(this.template(playlist));
-    Pace.stop();
-    console.log('playlistrender')
 
   },
   initialize: function(opts){
     this.Playlist = opts.playlist;
+
     this.listenTo(this.Playlist, 'change:status', this.statusChange);
     this.listenTo(this.Playlist, 'change:index', this.statusChange);
     this.listenTo(this.Playlist, 'playerLoaded', this.render);
@@ -13260,14 +13350,20 @@ var MainView = Backbone.View.extend({
   el: '.main',
   render: function(){
     this.PlayerView = new PlayerView({
-      playlist: this.Playlist
+      playlist: this.Playlist,
+      streams: this.Streams
     });
     
-    this.PlaylistView = new PlaylistView({playlist: this.Playlist});
-    Pace.start();
+    this.PlaylistView = new PlaylistView({
+      playlist: this.Playlist
+    });
+    this.PlaylistView.render();
+
   },
   initialize: function(opts){
-    this.Playlist = opts.playlist;
+    this.Playlist = opts.playlist,
+    this.Streams = opts.streams;
+
   }
 });
 

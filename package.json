@@ -16,6 +16,7 @@
     "url": "https://github.com/lyaunzbe/mffm/issues"
   },
   "dependencies": {
-    "backbone.localstorage": "~1.1.7"
+    "backbone.localstorage": "~1.1.7",
+    "debowerify": "~0.3.0"
   }
 }

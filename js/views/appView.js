@@ -8,6 +8,7 @@ var AppView = Backbone.View.extend({
   el: '#app',
 
   render: function(){
+
     console.log('rerendering');
     this.MainView = new MainView({streams: this.Streams, playlist: this.Playlist});
 
@@ -23,6 +24,8 @@ var AppView = Backbone.View.extend({
     this.listenTo(this.Streams, 'activeStreamChange', this.playlistChange);
     this.listenTo(this.Streams, 'activeStreamChange', this.render);
     this.render();
+    Pace.start();
+
   },
 
   playlistChange: function(){
