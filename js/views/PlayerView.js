@@ -9,10 +9,10 @@ var PlayerView = Backbone.View.extend({
     'click .controls i.fa-fast-forward' : 'onFF',
     'click .controls i.fa-fast-backward' : 'onFB',
     'click .track-progress' : 'onSeek'
-
   },
 
   template: JST['player'],
+
   render: function(){
     this.$el.empty();
 
@@ -20,8 +20,8 @@ var PlayerView = Backbone.View.extend({
     
     Pace.stop();
   },
+
   initialize: function(opts){
-    console.log('Init PlayerView');
     var self = this;
     this.progressBar = true;
     this.Playlist = opts.playlist;
@@ -29,7 +29,8 @@ var PlayerView = Backbone.View.extend({
 
     this.listenTo(this.Streams, 'activeStreamChange', this.disableProgressBar);
     this.listenTo(this.Playlist, 'playlistSelection', this.playlistSelection);
-    this.listenTo(this.Playlist, 'change:tracks', _.once(this.playlistLoad));
+    this.listenTo(this.Playlist, 'change:tracks', this.playlistLoad);
+
 
     if(!Players.yt){
       Players.yt = new YT.Player('stereo', {
@@ -57,7 +58,6 @@ var PlayerView = Backbone.View.extend({
 
   onPause: function(e){
     var yt    = Players.yt;
-
     yt.pauseVideo();
     this.Playlist.set('status', 0);
 
@@ -115,14 +115,13 @@ var PlayerView = Backbone.View.extend({
   },
 
   onYTPlayerStateChange: function(e){
-    var self = this;
     var trackProgress = function(){
       var yt = Players.yt;
 
       var progress = (yt.getCurrentTime() / yt.getDuration()) * 100;
       var width = $('.track-progress .slider').css('width', progress+'%');
     }
-
+    console.log('stateChange',e.data);
 
     switch(e.data){
       case -1:
@@ -130,6 +129,10 @@ var PlayerView = Backbone.View.extend({
           Pace.restart();
           Pace.start({ ghostTime:500});
         }else{ this.progressBar = true}
+        break;
+      case 0:
+        this.onFF();
+        break;
       case 1:
         setInterval(trackProgress,200);
         break;
@@ -140,10 +143,10 @@ var PlayerView = Backbone.View.extend({
   },
 
   playlistSelection: function(){
-    console.log(this);
     var yt    = Players.yt,
         index = this.Playlist.get('index'),
         tracks = this.Playlist.get('tracks');
+
     yt.loadVideoById(tracks[index].id);
     this.Playlist.set('status', 1);
     this.$el.find('i.fa-play')
@@ -164,7 +167,6 @@ var PlayerView = Backbone.View.extend({
 
       yt.seekTo(time);
       var width = $('.track-progress .slider').css('width', progress+'%');
-
     }
   
   },
@@ -174,9 +176,10 @@ var PlayerView = Backbone.View.extend({
   },
 
   playlistLoad: function(){
+    console.log('playlistLoad');
     var tracks = this.Playlist.get('tracks');
-    Players.yt.cueVideoById(tracks[0].id);
-    this.render();
+    if(this.Playlist.get('status') !== 1)
+      Players.yt.cueVideoById(tracks[0].id);
   }
 });
 

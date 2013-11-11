@@ -1,4 +1,5 @@
 var JST = {
+  
   streamlist: _.template([
     '<ul class="streamlist">',
       '<% _.each(items, function(item){ %>',
@@ -19,7 +20,7 @@ var JST = {
         '</li>',
       '<% }); %>',
     '<% } else { %>',
-      '<center> Start listening your favorite subreddits. </center>',
+      '<center> Start listening to your favorite subreddits. </center>',
     '<% } %>'
     ].join(' ')),
 
