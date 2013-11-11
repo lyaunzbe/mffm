@@ -32,14 +32,14 @@ var SidebarView = Backbone.View.extend({
 
   addStreamClick : function(){
     var input = $('.add-stream input'),
-        val   = input.val().trim();
+        val   = input.val().trim().toLowerCase();
     if(val.length > 0) this.addStream(val);
   },
 
   addStreamKey: function(e){
     var input = $('.add-stream input');
     if(e.keyCode == 13){
-      var val = input.val().trim();
+      var val = input.val().trim().toLowerCase();
       if(val.length > 0) this.addStream(val);
     }
   },
