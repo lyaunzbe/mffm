@@ -10,17 +10,19 @@ var MainView = Backbone.View.extend({
 
   },
   initialize: function(opts){
-    console.log('init MainView');
+    this.Player = opts.player;
     this.Playlist = opts.playlist,
     this.Streams = opts.streams;
 
     this.PlayerView = new PlayerView({
       playlist: this.Playlist,
-      streams: this.Streams
+      streams: this.Streams,
+      player: this.Player
     });
 
     this.PlaylistView = new PlaylistView({
-      playlist: this.Playlist
+      playlist: this.Playlist,
+      player: this.Player
     });
   }
 });

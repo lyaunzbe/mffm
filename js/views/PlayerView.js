@@ -17,7 +17,7 @@ var PlayerView = Backbone.View.extend({
     this.$el.empty();
 
     this.$el.append(this.template);
-    
+
     Pace.stop();
   },
 
@@ -25,6 +25,7 @@ var PlayerView = Backbone.View.extend({
     var self = this;
     this.progressBar = true;
     this.Playlist = opts.playlist;
+    this.Player = opts.player;
     this.Streams = opts.streams;
 
     this.listenTo(this.Streams, 'activeStreamChange', this.disableProgressBar);
@@ -37,9 +38,10 @@ var PlayerView = Backbone.View.extend({
         events: {
           'onReady': self.onYTPlayerReady.bind(self),
           'onStateChange': self.onYTPlayerStateChange.bind(self),
-        }    
+        }
       });
     }else{
+      console.log
       var tracks = this.Playlist.get('tracks');
       Players.yt.cueVideoById(tracks[0].id);
       this.render();
@@ -50,7 +52,7 @@ var PlayerView = Backbone.View.extend({
     var yt    = Players.yt;
     yt.playVideo();
     this.Playlist.set('status', 1);
-
+    this.Player.set('status', 1);
     var ctrl = $(e.currentTarget);
     ctrl.removeClass('play fa-play');
     ctrl.addClass('pause fa-pause');
@@ -60,7 +62,7 @@ var PlayerView = Backbone.View.extend({
     var yt    = Players.yt;
     yt.pauseVideo();
     this.Playlist.set('status', 0);
-
+    this.Player.set('status', 0);
     var ctrl = $(e.currentTarget);
     ctrl.removeClass('pause fa-pause');
     ctrl.addClass('play fa-play');
@@ -78,7 +80,7 @@ var PlayerView = Backbone.View.extend({
       this.Playlist.set('status', 1);
       yt.loadVideoById(tracks[cindex].id);
     }else{
-      // Need to handle the case where we are 
+      // Need to handle the case where we are
       // at the end of the playlist.
       yt.stopVideo();
     }
@@ -96,7 +98,7 @@ var PlayerView = Backbone.View.extend({
       this.Playlist.set('status', 1);
       yt.loadVideoById(tracks[cindex].id);
     }else{
-      // Need to handle the case where we are 
+      // Need to handle the case where we are
       // at the beginning of the playlist.
       yt.stopVideo();
 
@@ -109,7 +111,7 @@ var PlayerView = Backbone.View.extend({
     Players.yt = e.target,
         tracks = this.Playlist.get('tracks');
     yt = Players.yt;
-    
+
     if(tracks)
       yt.cueVideoById(tracks[0].id);
   },
@@ -148,7 +150,8 @@ var PlayerView = Backbone.View.extend({
         tracks = this.Playlist.get('tracks');
 
     yt.loadVideoById(tracks[index].id);
-    this.Playlist.set('status', 1);
+    this.Playlist.set('status',0);
+    this.Playlist.set('status',1);
     this.$el.find('i.fa-play')
       .removeClass().addClass('pause fa fa-pause');
   },
@@ -168,7 +171,7 @@ var PlayerView = Backbone.View.extend({
       yt.seekTo(time);
       var width = $('.track-progress .slider').css('width', progress+'%');
     }
-  
+
   },
 
   disableProgressBar: function(){
@@ -178,7 +181,7 @@ var PlayerView = Backbone.View.extend({
   playlistLoad: function(){
     console.log('playlistLoad');
     var tracks = this.Playlist.get('tracks');
-    if(this.Playlist.get('status') !== 1)
+    if(this.Playlist.get('status') === -1)
       Players.yt.cueVideoById(tracks[0].id);
   }
 });

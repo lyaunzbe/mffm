@@ -11,12 +11,14 @@ var SidebarView = Backbone.View.extend({
   events: {
     "click .add-stream .add" : "addStreamClick",
     "keypress .add-stream input" : "addStreamKey",
-    "click .streamlist li" : "streamClick" 
+    "click .streamlist li" : "streamClick",
+    'mouseover .streamlist li' : 'overStreamItem',
+    'mouseout .streamlist li' : 'outStreamItem'
   },
 
   render: function(){
     var streams = {
-      items:this.Streams.toJSON()
+      items: this.Streams.toJSON()
     };
     this.$el.find('.streamlist').remove();
     this.$el.find('.logo').after(this.template(streams));
@@ -47,7 +49,7 @@ var SidebarView = Backbone.View.extend({
   addStream: function(streamName){
     var self = this;
     StreamCtrl.get(streamName, function(err, stream){
-      if(err) { 
+      if(err) {
         alert(err);
         return;
       }
@@ -64,11 +66,24 @@ var SidebarView = Backbone.View.extend({
     })
   },
 
+  removeStream: function(){
+    var self = this;
+
+    // StreamCtrl.del()
+  },
+
+  overStreamItem: function() {
+
+  },
+
+  outStreamItem: function() {
+  },
+
   streamClick: function(e){
     var id = $(e.target).text(),
         newActive = this.Streams.findWhere({id: id}),
         oldActive = this.Streams.findWhere({active: true});
-      
+
     if(oldActive.id === newActive.id) return;
     oldActive.set('active', false)
     newActive.set('active', true);
